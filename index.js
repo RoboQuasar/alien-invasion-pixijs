@@ -72,7 +72,7 @@ function setup() {
   app.stage.addChild(sky2);
 
   //Задаем текстуры персонажей игры
-  let characters = PIXI.loader.resources["images/space_rush.json"].textures;
+  let characters = PIXI.loader.resources["images/alien_invasion.json"].textures;
 
   //Aliens
   Aliens = new PIXI.particles.ParticleContainer();
@@ -134,7 +134,6 @@ function gameLoop(delta) {
 
 function play(delta) {
   handleKeyButtons();
-  //Move the rocket 1 pixel 
   sky1.x -= skyVelocity;
   sky2.x -= skyVelocity;
 
@@ -148,6 +147,23 @@ function play(delta) {
       Aliens.children[i].x = 800;
       Aliens.children[i].y = randomInt(0, app.stage.height - Aliens.children[i].height - grassHeight);
     }
+
+    if(rocket.x + rocket.width >= Aliens.children[i].x && 
+      rocket.y + rocket.height >= Aliens.children[i].y && 
+      rocket.x <= Aliens.children[i].x + Aliens.children[i].width &&
+      rocket.y <= Aliens.children[i].y + Aliens.children[i].height)
+    {
+      Aliens.children[i].visible = false;
+      Aliens.children[i].x = 810;
+      Aliens.children[i].y = randomInt(0, app.stage.height - Aliens.children[i].height - grassHeight);
+    }
+
+
+    if(Aliens.children[i].x == rocket.x + rocket.width) {
+
+    }
+
+    if (Aliens.children[i].x >= 800) Aliens.children[i].visible = true;
   }
   
 }
