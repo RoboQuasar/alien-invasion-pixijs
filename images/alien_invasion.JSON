@@ -1,0 +1,27 @@
+{"frames": {
+  "rocket":
+  {
+    "frame": {"x":0,"y":0,"w":130,"h":56},
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": {"x":0,"y":0,"w":130,"h":56},
+    "sourceSize": {"w":130,"h":56},
+    "pivot": {"x":0.5,"y":0.5}
+  },
+  "alien_on_ufo":
+  {
+    "frame": {"x":0,"y":56,"w":90,"h":78},
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": {"x":0,"y":0,"w":90,"h":78},
+    "sourceSize": {"w":90,"h":78},
+    "pivot": {"x":0.5,"y":0.5}
+  }},
+  "meta": {
+    "version": "1.0",
+    "image": "sprite_sheet1.png",
+    "format": "RGBA8888",
+    "size": {"w":1000,"h":800},
+    "scale": "1"
+  }
+}
