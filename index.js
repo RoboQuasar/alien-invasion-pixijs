@@ -158,7 +158,7 @@ function play(delta) {
       Aliens.children[i].y = randomInt(0, app.stage.height - Aliens.children[i].height - grassHeight);
     }
 
-    // Второй вариант столкновений: (TODO: РАЗОБРАТЬ ПОДРОБНО код функции hitTestRectangle)
+    // Второй вариант столкновений:
     if(hitTestRectangle(rocket, Aliens.children[i])) {
       Aliens.children[i].visible = false;
       Aliens.children[i].x = 810;
