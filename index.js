@@ -34,7 +34,6 @@ document.addEventListener('keyup', handleKeyUp);
 //Add the canvas that Pixi automatically created for you to the HTML document
 document.body.appendChild(app.view);
 
-//load an image and run the `setup` function when it's done
 loader
   .add("sky", "images/sky3.jpg")
   .add("images/alien_invasion.json")
@@ -42,14 +41,8 @@ loader
   .load(setup);
 
 function loadProgressHandler(loader, resource) {
-  //Display the file `url` currently being loaded
   console.log("loading: " + resource.url); 
-
-  //Display the percentage of files currently loaded
   console.log("progress: " + loader.progress + "%"); 
-
-  //If you gave your files names as the first argument 
-  //of the `add` method, you can access them like this
   console.log("resource name: " + resource.name);
 }
 
@@ -81,19 +74,19 @@ let GameOverTextStyle = new PIXI.TextStyle({
 
 //This `setup` function will run when the image has loaded
 function setup() {
-  //Create the sky1 sprite
+  //--------------------------------Sky Srites
   sky1 = new Sprite(PIXI.loader.resources.sky.texture);
   sky1.width = 800;
   sky1.height = 600;
   app.stage.addChild(sky1);
 
-  //Create the sky2 sprite
   sky2 = new Sprite(PIXI.loader.resources.sky.texture);
   sky2.width = 800;
   sky2.height = 600;
   sky2.position.set(800,0);
   app.stage.addChild(sky2);
 
+  //--------------------------------Bullet Graphics
   renderBullet = () => {
     bullet = new PIXI.Graphics();
     bullet.beginFill(0xFFFF00);
@@ -109,8 +102,8 @@ function setup() {
   }
 
   Bullets = new PIXI.Container();
-
   app.stage.addChild(Bullets);
+
   //Задаем текстуры персонажей игры
   let characters = PIXI.loader.resources["images/alien_invasion.json"].textures;
 
@@ -118,25 +111,19 @@ function setup() {
   Aliens = new PIXI.Container();
 
   for (let i = 0; i < numberOfAliens; i++) {
-    //Create the alien sprite
     alien = new Sprite(characters["alien_on_ufo"]);
 
-    //Space each alien horizontally according to the `spacing` value.
-    //`xOffset` determines the point from the left of the screen
-    //at which the first alien should be added.
     let xPosition = randomInt(xAlienOffset, 2000);
 
-    //Give the alien a random y position
-    //(`randomInt` is a custom function - see below)
     let yPosition = randomInt(grassHeight, app.stage.height - alien.height);
 
     alien.id = `alien0${i}`;
     alien.x = xPosition;
     alien.y = yPosition;
 
-    //Add the alien to the stage
     Aliens.addChild(alien);
   }
+
   app.stage.addChild(Aliens);
 
   //--------------------------------Rocket sprite
@@ -166,15 +153,15 @@ function setup() {
   //Set the game state
   state = play;
 
-  app.ticker.add(delta => gameLoop(delta));
+  app.ticker.add(() => gameLoop());
 }
 
-function gameLoop(delta) {
+gameLoop = () => {
   //Update the current game state:
-  state(delta);
+  state();
 }
 
-function play() {
+play = () => {
   handleKeyButtons();
 
   sky1.x -= skyVelocity;
@@ -204,7 +191,10 @@ function play() {
     }
 
     // Второй вариант столкновений:
+    // функция hitTestRectangle находится в /utils.index.js
     /* if(hitTestRectangle(rocket, Allien)) {
+      rocket.health -= 1;
+      healthText.text = `Health: ${rocket.health}`;
       Allien.visible = false;
       Allien.x = 810;
       Allien.y = randomInt(0, app.stage.height - Allien.height - grassHeight);
@@ -244,18 +234,13 @@ function play() {
   }
 }
 
-function GameOver() {
+GameOver = () => {
   app.ticker.remove();
   app.stage.addChild(gameOverText);
   gameOverText.position.set(400 - gameOverText.width/2, 250);
 }
 
-//The `randomInt` helper function
-function randomInt(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-handleGamePause = (e) => {
+function handleGamePause(e) {
   e.target.blur();
   if(app.ticker.started) {
     e.target.textContent = 'start';
@@ -264,16 +249,16 @@ handleGamePause = (e) => {
     e.target.textContent = 'pause';
     app.ticker.start();
   }
-}
+};
 
 // keyBoardControl
 let currentlyPressedKeys = {};
 
-function handleKeyDown(event) {
-    currentlyPressedKeys[event.keyCode] = true;
+function handleKeyDown(e) {
+    currentlyPressedKeys[e.keyCode] = true;
 
-    if (event.keyCode == 32) {
-      event.preventDefault();
+    if (e.keyCode == 32) {
+      e.preventDefault();
       Bullets.addChild(renderBullet());
       bullet.x = rocket.x + rocket.width;
       bullet.y = rocket.y + rocket.height/2;
@@ -326,53 +311,3 @@ function handleKeyButtons() {
         if(rocket.x >= 800-rocket.width) rocket.x = 800-rocket.width;
     }
 }
-
-function hitTestRectangle(r1, r2) {
-  //Define the variables we'll need to calculate
-  let hit, combinedHalfWidths, combinedHalfHeights, vx, vy;
-
-  //hit will determine whether there's a collision
-  hit = false;
-
-  //Find the center points of each sprite
-  r1.centerX = r1.x + r1.width / 2;
-  r1.centerY = r1.y + r1.height / 2;
-  r2.centerX = r2.x + r2.width / 2;
-  r2.centerY = r2.y + r2.height / 2;
-
-  //Find the half-widths and half-heights of each sprite
-  r1.halfWidth = r1.width / 2;
-  r1.halfHeight = r1.height / 2;
-  r2.halfWidth = r2.width / 2;
-  r2.halfHeight = r2.height / 2;
-
-  //Calculate the distance vector between the sprites
-  vx = r1.centerX - r2.centerX;
-  vy = r1.centerY - r2.centerY;
-
-  //Figure out the combined half-widths and half-heights
-  combinedHalfWidths = r1.halfWidth + r2.halfWidth;
-  combinedHalfHeights = r1.halfHeight + r2.halfHeight;
-
-  //Check for a collision on the x axis
-  if (Math.abs(vx) < combinedHalfWidths) {
-
-    //A collision might be occurring. Check for a collision on the y axis
-    if (Math.abs(vy) < combinedHalfHeights) {
-
-      //There's definitely a collision happening
-      hit = true;
-    } else {
-
-      //There's no collision on the y axis
-      hit = false;
-    }
-  } else {
-
-    //There's no collision on the x axis
-    hit = false;
-  }
-
-  //`hit` will be either `true` or `false`
-  return hit;
-};
