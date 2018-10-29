@@ -1,3 +1,7 @@
+document.addEventListener("DOMContentLoaded", () => {  
+  document.getElementsByClassName('pause')[0].addEventListener('click', handleGamePause);
+});
+
 let type = "WebGL"
 if(!PIXI.utils.isWebGLSupported()){
   type = "canvas"
@@ -24,8 +28,8 @@ let app = new Application({
 app.renderer.view.style.display = 'block';
 app.renderer.view.style.margin='140px auto 0';
 
-document.onkeydown = handleKeyDown;
-document.onkeyup = handleKeyUp;
+document.addEventListener('keydown', handleKeyDown);
+document.addEventListener('keyup', handleKeyUp);
 
 //Add the canvas that Pixi automatically created for you to the HTML document
 document.body.appendChild(app.view);
@@ -50,14 +54,33 @@ function loadProgressHandler(loader, resource) {
 }
 
 let Aliens;
-let sky, rocket, alien; // sprites
+let sky, rocket, alien, bullet; // sprites
 let skyVelocity = 2, rocketMaxVelocity = 10, aliensVelocity = 4;
 let numberOfAliens = 5, xAlienOffset = 800, grassHeight = 50;
+let healthMessage, scoreText;
+
+let textStyle = new PIXI.TextStyle({
+  fontFamily: "Arial",
+  fontStyle: "italic",
+  fontSize: 20,
+  fill: "white",
+  stroke: '#ff3300',
+  strokeThickness: 2,
+  fontVariant: "small-caps",
+});
+
+let GameOverTextStyle = new PIXI.TextStyle({
+  fontFamily: "Arial",
+  fontStyle: "italic",
+  fontSize: 50,
+  fill: "#ff3300",
+  stroke: 'black',
+  strokeThickness: 4,
+  fontVariant: "small-caps",
+});
 
 //This `setup` function will run when the image has loaded
 function setup() {
-  console.log('Finish!');
-
   //Create the sky1 sprite
   sky1 = new Sprite(PIXI.loader.resources.sky.texture);
   sky1.width = 800;
@@ -71,11 +94,28 @@ function setup() {
   sky2.position.set(800,0);
   app.stage.addChild(sky2);
 
+  renderBullet = () => {
+    bullet = new PIXI.Graphics();
+    bullet.beginFill(0xFFFF00);
+    bullet.drawEllipse(0, 0, 10, 3.3);
+    bullet.beginFill(0xD98C18);
+    bullet.drawEllipse(0, 0, 5, 3.3);
+    bullet.beginFill(0xD91818);
+    bullet.drawEllipse(6, 0, 5, 3.3);
+    bullet.endFill();
+
+    bullet.velocity = 8;
+    return bullet;
+  }
+
+  Bullets = new PIXI.Container();
+
+  app.stage.addChild(Bullets);
   //Задаем текстуры персонажей игры
   let characters = PIXI.loader.resources["images/alien_invasion.json"].textures;
 
-  //Aliens
-  Aliens = new PIXI.particles.ParticleContainer();
+  //--------------------------------Aliens sprites
+  Aliens = new PIXI.Container();
 
   for (let i = 0; i < numberOfAliens; i++) {
     //Create the alien sprite
@@ -89,7 +129,6 @@ function setup() {
     //Give the alien a random y position
     //(`randomInt` is a custom function - see below)
     let yPosition = randomInt(grassHeight, app.stage.height - alien.height);
-    console.log(yPosition);
 
     alien.id = `alien0${i}`;
     alien.x = xPosition;
@@ -98,10 +137,9 @@ function setup() {
     //Add the alien to the stage
     Aliens.addChild(alien);
   }
-
   app.stage.addChild(Aliens);
 
-  //Create the Rocket sprite
+  //--------------------------------Rocket sprite
   rocket = new Sprite(characters["rocket"]);
   //Add the rocket to the stage
   app.stage.addChild(rocket);
@@ -109,22 +147,26 @@ function setup() {
   rocket.position.set(10, 200);
   rocket.vx = 4;
   rocket.vy = 4;
+  rocket.health = 5;
+  rocket.score = 0;
 
+  //--------------------------------Health Text
+  healthText = new PIXI.Text(`Health: ${rocket.health}`, textStyle);
+  app.stage.addChild(healthText);
+  healthText.position.set(50, 10);
+
+  //--------------------------------Score Text
+  scoreText = new PIXI.Text(`Score: ${rocket.score}`, textStyle);
+  app.stage.addChild(scoreText);
+  scoreText.position.set(150, 10);
+
+   //--------------------------------Game Over Text
+   gameOverText = new PIXI.Text('Game Over!', GameOverTextStyle);
+  
   //Set the game state
   state = play;
 
   app.ticker.add(delta => gameLoop(delta));
-
-  /*   Aliens.position.set(64, 64);
-
-  console.log("Aliens.children[3].position:", Aliens.children[3].position);
-  console.log("Aliens.children[2].position:", Aliens.children[2].position);
-  console.log("Aliens.toGlobal(Aliens.children[3].position):", Aliens.toGlobal(Aliens.children[3].position));
-  console.log("Aliens.toGlobal(Aliens.children[2].position):", Aliens.toGlobal(Aliens.children[2].position));
-  console.log(
-    "Aliens.toLocal(Aliens.children[3].position, Aliens.children[2]).x:",
-    Aliens.toLocal(Aliens.children[3].position, Aliens.children[2]).x
-  ); */
 }
 
 function gameLoop(delta) {
@@ -132,42 +174,80 @@ function gameLoop(delta) {
   state(delta);
 }
 
-function play(delta) {
+function play() {
   handleKeyButtons();
+
   sky1.x -= skyVelocity;
   sky2.x -= skyVelocity;
-
   if (sky1.x == -800) sky1.x = 800;
   if (sky2.x == -800) sky2.x = 800;
 
-  for (let i = 0; i < numberOfAliens; i++) {
-    Aliens.children[i].x -= aliensVelocity + i/1.5;
+  Bullets.children.forEach(Bullet => {
+    Bullet.x += Bullet.velocity;
 
-    if (Aliens.children[i].x <= -90) {
-      Aliens.children[i].x = 800;
-      Aliens.children[i].y = randomInt(0, app.stage.height - Aliens.children[i].height - grassHeight);
+    if(Bullet.x == 800 + Bullet.width) {
+      Bullets.removeChild(Bullet);
     }
+  });
 
-    // Один вариант столкновений:
-    if(rocket.x + rocket.width >= Aliens.children[i].x && 
-      rocket.y + rocket.height >= Aliens.children[i].y && 
-      rocket.x <= Aliens.children[i].x + Aliens.children[i].width &&
-      rocket.y <= Aliens.children[i].y + Aliens.children[i].height) {
-      Aliens.children[i].visible = false;
-      Aliens.children[i].x = 810;
-      Aliens.children[i].y = randomInt(0, app.stage.height - Aliens.children[i].height - grassHeight);
+  Aliens.children.forEach((Allien, index) => {
+    Allien.x -= aliensVelocity + index/1.5;
+
+    // Первый вариант столкновений:
+    if(rocket.x + rocket.width >= Allien.x && rocket.y + rocket.height >= Allien.y && 
+      rocket.x <= Allien.x + Allien.width && rocket.y <= Allien.y + Allien.height) {
+      rocket.health -= 1;
+      healthText.text = `Health: ${rocket.health}`;
+      Allien.visible = false;
+      Allien.x = 810;
+      Allien.y = randomInt(0, app.stage.height - Allien.height - grassHeight);
     }
 
     // Второй вариант столкновений:
-    if(hitTestRectangle(rocket, Aliens.children[i])) {
-      Aliens.children[i].visible = false;
-      Aliens.children[i].x = 810;
-      Aliens.children[i].y = randomInt(0, app.stage.height - Aliens.children[i].height - grassHeight);
+    /* if(hitTestRectangle(rocket, Allien)) {
+      Allien.visible = false;
+      Allien.x = 810;
+      Allien.y = randomInt(0, app.stage.height - Allien.height - grassHeight);
+    } */
+
+    // Первый вариант столкновений:
+    Bullets.children.forEach(Bullet => {
+      if (Bullet.x + Bullet.width >= Allien.x && Bullet.y + Bullet.height >= Allien.y && 
+        Bullet.x <= Allien.x + Allien.width && Bullet.y <= Allien.y + Allien.height) {
+          Bullets.removeChild(Bullet);
+          Allien.alpha -= 0.5;
+      }
+    });
+
+    if (Allien.alpha <= 0) {
+      rocket.score += 1;
+      scoreText.text = `Score: ${rocket.score}`;
+      Allien.visible = false;
+      Allien.x = 810;
+      Allien.y = randomInt(0, app.stage.height - Allien.height - grassHeight);
+    }
+
+    if (Allien.x <= -90) {
+      Allien.x = 800;
+      Allien.y = randomInt(0, app.stage.height - Allien.height - grassHeight);
     }
     
-    if (Aliens.children[i].x >= 800) Aliens.children[i].visible = true;
+    if (Allien.x >= 800) {
+      Allien.visible = true;
+      Allien.alpha = 1;
+    }
+  });
+
+  if (rocket.health <= 0) {
+    rocket.health = 0; // для того, чтоб не проскакивало -1
+    state = GameOver;
   }
-  
+}
+
+function GameOver() {
+  app.ticker.remove();
+  app.stage.addChild(gameOverText);
+  gameOverText.position.set(400 - gameOverText.width/2, 250);
 }
 
 //The `randomInt` helper function
@@ -175,11 +255,28 @@ function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+handleGamePause = (e) => {
+  e.target.blur();
+  if(app.ticker.started) {
+    e.target.textContent = 'start';
+    app.ticker.stop();
+  } else {
+    e.target.textContent = 'pause';
+    app.ticker.start();
+  }
+}
+
 // keyBoardControl
 let currentlyPressedKeys = {};
 
 function handleKeyDown(event) {
     currentlyPressedKeys[event.keyCode] = true;
+
+    if (event.keyCode == 32) {
+      Bullets.addChild(renderBullet());
+      bullet.x = rocket.x + rocket.width;
+      bullet.y = rocket.y + rocket.height/2;
+    }
 }
 
 function handleKeyUp(event) {
@@ -190,22 +287,18 @@ function handleKeyButtons() {
     if (currentlyPressedKeys[37]) {
         // Left cursor key
         if(rocket.vx >= 0.2) rocket.vx -= 0.1;
-        console.log('rocket.vx:', rocket.vx);
     }
     if (currentlyPressedKeys[39]) {
         // Right cursor key
         if(rocket.vx <= rocketMaxVelocity) rocket.vx += 0.1;
-        console.log('rocket.vx:', rocket.vx);
     }
     if (currentlyPressedKeys[38]) {
         // Up cursor key
         if(rocket.vy <= rocketMaxVelocity) rocket.vy += 0.1;
-        console.log('rocket.vy:', rocket.vy);
     }
     if (currentlyPressedKeys[40]) {
         // Down cursor key
         if(rocket.vy >= 0.2) rocket.vy -= 0.1;
-        console.log('rocket.vy:', rocket.vy);
     }
 
     if (currentlyPressedKeys[87]) {
@@ -230,7 +323,7 @@ function handleKeyButtons() {
         // "D"            
         rocket.x += rocket.vx;
         if(rocket.x >= 800-rocket.width) rocket.x = 800-rocket.width;
-    } 
+    }
 }
 
 function hitTestRectangle(r1, r2) {

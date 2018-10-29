@@ -1,11 +1,11 @@
 {"frames": {
   "rocket":
   {
-    "frame": {"x":0,"y":0,"w":130,"h":56},
+    "frame": {"x":0,"y":0,"w":130,"h":50},
     "rotated": false,
     "trimmed": false,
-    "spriteSourceSize": {"x":0,"y":0,"w":130,"h":56},
-    "sourceSize": {"w":130,"h":56},
+    "spriteSourceSize": {"x":0,"y":0,"w":130,"h":50},
+    "sourceSize": {"w":130,"h":50},
     "pivot": {"x":0.5,"y":0.5}
   },
   "alien_on_ufo":

@@ -1,0 +1,31 @@
+.controls {
+  width: 800px;
+  margin: 10px auto 20px;
+  color: white;
+}
+.rules {
+  padding: 0;
+  list-style: none;
+  font-size: 18px;
+  text-align: left;
+  line-height: 2;
+}
+
+.rules__subheader {
+  font-size: 21px;
+  margin: 0 auto 15px;
+}
+
+.pause {
+  position: absolute;
+  top: 155px;
+  left: calc(50% + 330px);
+  display: block;
+  padding: 5px 10px;
+  color: white;
+  text-transform: uppercase;
+  border-radius: 5px;
+  border-color: white;
+  background: transparent;
+  cursor: pointer;
+}
