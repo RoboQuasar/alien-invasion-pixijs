@@ -1,4 +1,4 @@
-# Alien_Invasion
+# Alien Invasion
 ### 2D игра, созданная с помощью PIXIjs.
 
 * Возможности:
