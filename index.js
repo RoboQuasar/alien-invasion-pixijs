@@ -273,6 +273,7 @@ function handleKeyDown(event) {
     currentlyPressedKeys[event.keyCode] = true;
 
     if (event.keyCode == 32) {
+      event.preventDefault();
       Bullets.addChild(renderBullet());
       bullet.x = rocket.x + rocket.width;
       bullet.y = rocket.y + rocket.height/2;
