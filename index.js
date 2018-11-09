@@ -46,14 +46,14 @@ function loadProgressHandler(loader, resource) {
   console.log("resource name: " + resource.name);
 }
 
-let Aliens;
+let Aliens, PauseContainer;
 let sky, rocket, alien, bullet; // sprites
 let skyVelocity = 2, rocketMaxVelocity = 10, aliensVelocity = 4;
 let numberOfAliens = 5, xAlienOffset = 800, grassHeight = 50;
 let healthMessage, scoreText;
 
 let textStyle = new PIXI.TextStyle({
-  fontFamily: "Arial",
+  fontFamily: "Futura",
   fontStyle: "italic",
   fontSize: 20,
   fill: "white",
@@ -63,7 +63,7 @@ let textStyle = new PIXI.TextStyle({
 });
 
 let GameOverTextStyle = new PIXI.TextStyle({
-  fontFamily: "Arial",
+  fontFamily: "Futura",
   fontStyle: "italic",
   fontSize: 50,
   fill: "#ff3300",
@@ -110,6 +110,7 @@ function setup() {
   //--------------------------------Aliens sprites
   Aliens = new PIXI.Container();
 
+
   for (let i = 0; i < numberOfAliens; i++) {
     alien = new Sprite(characters["alien_on_ufo"]);
 
@@ -137,6 +138,42 @@ function setup() {
   rocket.health = 5;
   rocket.score = 0;
 
+  //--------------------------------GamePause
+
+  PauseContainer = new PIXI.Container();
+  const background = new PIXI.Graphics();
+  background.beginFill('black', 0.5);
+  background.drawRect(0, 0, 800, 600);
+  background.endFill();
+  PauseContainer.addChild(background);
+
+  // ------------------------------CircleButton
+  CircleButton = new PIXI.Graphics();
+  CircleButton.beginFill(0x9966FF);
+  CircleButton.lineStyle(2, 0xFFDFFD, 1);
+  CircleButton.drawCircle(0, 0, 40);
+  CircleButton.endFill();
+  CircleButton.x = PauseContainer.width/2;
+  CircleButton.y = PauseContainer.height/2;
+
+  CircleButtonTextStyle = new PIXI.TextStyle({
+    fontFamily: "Arial",
+    fontSize: 25,
+    fill: "white",
+    textTransform: 'uppercase',
+    stroke: '#ff3300',
+    strokeThickness: 2,
+  });
+  
+  CircleButtonText = new PIXI.Text("Play!", CircleButtonTextStyle);
+  CircleButtonText.position.set(-28, -15);
+  CircleButton.addChild(CircleButtonText);
+  PauseContainer.addChild(CircleButton);
+  CircleButton.interactive = true;
+  CircleButton.buttonMode = true;
+  CircleButton.on('pointerdown', handleCircButtonPressed);
+  app.stage.addChild(PauseContainer);
+
   //--------------------------------Health Text
   healthText = new PIXI.Text(`Health: ${rocket.health}`, textStyle);
   app.stage.addChild(healthText);
@@ -148,12 +185,12 @@ function setup() {
   scoreText.position.set(150, 10);
 
    //--------------------------------Game Over Text
-   gameOverText = new PIXI.Text('Game Over!', GameOverTextStyle);
-  
-  //Set the game state
-  state = play;
+  gameOverText = new PIXI.Text('Game Over!', GameOverTextStyle);
 
   app.ticker.add(() => gameLoop());
+
+  //Set the game state
+  state = GamePaused;
 }
 
 gameLoop = () => {
@@ -161,7 +198,7 @@ gameLoop = () => {
   state();
 }
 
-play = () => {
+function play() {
   handleKeyButtons();
 
   sky1.x -= skyVelocity;
@@ -234,22 +271,34 @@ play = () => {
   }
 }
 
-GameOver = () => {
+function GameOver() {
   app.ticker.remove();
   app.stage.addChild(gameOverText);
   gameOverText.position.set(400 - gameOverText.width/2, 250);
 }
 
+function GamePaused() {
+  app.ticker.stop();
+  PauseContainer.visible = true;
+}
+
 function handleGamePause(e) {
-  e.target.blur();
+  if (e) e.target.blur();
   if(app.ticker.started) {
-    e.target.textContent = 'start';
+    if (e) e.target.textContent = 'start';
     app.ticker.stop();
   } else {
-    e.target.textContent = 'pause';
+    if (e) e.target.textContent = 'pause';
     app.ticker.start();
   }
 };
+
+function handleCircButtonPressed(e) {
+  e.target.scale.set(1.2, 1.2);
+  state = play;
+  app.ticker.start();
+  PauseContainer.visible = false;
+}
 
 // keyBoardControl
 let currentlyPressedKeys = {};
@@ -262,6 +311,9 @@ function handleKeyDown(e) {
       Bullets.addChild(renderBullet());
       bullet.x = rocket.x + rocket.width;
       bullet.y = rocket.y + rocket.height/2;
+    } else if (e.keyCode == 80) {
+      e.preventDefault();
+      handleGamePause();
     }
 }
 
