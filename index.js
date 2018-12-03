@@ -52,6 +52,10 @@ let skyVelocity = 2, rocketMaxVelocity = 10, aliensVelocity = 4;
 let numberOfAliens = 5, xAlienOffset = 800, grassHeight = 50;
 let healthMessage, scoreText;
 
+let ropeLength = 45;
+let fireDirection = 1;
+let points = [];
+
 let textStyle = new PIXI.TextStyle({
   fontFamily: "Futura",
   fontStyle: "italic",
@@ -110,7 +114,6 @@ function setup() {
   //--------------------------------Aliens sprites
   Aliens = new PIXI.Container();
 
-
   for (let i = 0; i < numberOfAliens; i++) {
     alien = new Sprite(characters["alien_on_ufo"]);
 
@@ -128,15 +131,33 @@ function setup() {
   app.stage.addChild(Aliens);
 
   //--------------------------------Rocket sprite
-  rocket = new Sprite(characters["rocket"]);
+  // build a rope!
+  points = [];
+
+  for (let i = 0; i < 25; i++) {
+    if(i >= 20) points.push(new PIXI.Point(i, 0));
+    else {
+      points.push(new PIXI.Point(i, 0));
+    }
+  }
+
+  rocket = new PIXI.mesh.Rope(characters["rocket"], points);
+
   //Add the rocket to the stage
   app.stage.addChild(rocket);
   //Change the sprite's position
+  rocket.width = characters["rocket"].width;
+  rocket.height = characters["rocket"].height;
+
+  rocket.pivot.y -= rocket.height / 2;
+  
   rocket.position.set(10, 200);
   rocket.vx = 4;
   rocket.vy = 4;
   rocket.health = 5;
   rocket.score = 0;
+
+  rocket.hitArea = new PIXI.Ellipse(rocket.pivot.x, rocket.pivot.y, rocket.width, rocket.height);
 
   //--------------------------------GamePause
 
@@ -268,6 +289,15 @@ function play() {
   if (rocket.health <= 0) {
     rocket.health = 0; // для того, чтоб не проскакивало -1
     state = GameOver;
+  }
+
+  // make the rocket
+  for (let i = 0; i < 5; i++) {
+    if(points[4].x <= 2.4) fireDirection = 1;
+    else if (points[4].x >= 3.6) fireDirection = -1;
+
+    if (fireDirection == 1) points[i].x += 0.4;
+    else if (fireDirection == -1) points[i].x -= 0.4;
   }
 }
 
